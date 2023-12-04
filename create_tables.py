@@ -3,19 +3,42 @@ import psycopg2
 from sql_queries import create_table_queries, drop_table_queries
 
 
-def drop_tables(cur, conn):
+def drop_tables(cur, conn) -> None:
+    """
+    Drop tables in Redshift cluster. The drop queries are defined in
+    sql_queries.py
+
+    Parameters
+    ----------
+    cur : psycopg2.extensions.cursor
+        Cursor to database
+    conn : psycopg2.extensions.connection
+        Connection to database
+    """
     for query in drop_table_queries:
         cur.execute(query)
         conn.commit()
 
 
-def create_tables(cur, conn):
+def create_tables(cur, conn) -> None:
+    """
+    Create tables in Redshift cluster. The create queries are defined in
+    sql_queries.py
+
+    Parameters
+    ----------
+    cur : psycopg2.extensions.cursor
+        Cursor to database
+    conn : psycopg2.extensions.connection
+        Connection to database
+    """
     for query in create_table_queries:
         cur.execute(query)
         conn.commit()
 
 
-def main():
+def main() -> None:
+    """Connect to Redshift cluster and create tables."""
     config = configparser.ConfigParser()
     config.read('dwh.cfg')
     connection_string = (

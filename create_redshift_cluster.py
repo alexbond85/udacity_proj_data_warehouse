@@ -2,8 +2,6 @@ import configparser
 import boto3
 import json
 
-import psycopg2
-
 # Read config
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
@@ -30,7 +28,8 @@ iam = boto3.client('iam',
 
 def create_role() -> str:
     """
-    Create IAM role for Redshift cluster
+    Create IAM role for the Redshift cluster. Role name is specified by
+    CLUSTER_IAM_ROLE_NAME in config.
 
     Returns
     -------
@@ -61,7 +60,11 @@ def create_role() -> str:
     return role_arn
 
 
-def attach_s3_read_only_access():
+def attach_s3_read_only_access() -> None:
+    """Attach AmazonS3ReadOnlyAccess to the existing IAM role.
+
+    Role name is specified by CLUSTER_IAM_ROLE_NAME in config.
+    """
     print('Attaching AmazonS3ReadOnlyAccess to IAM role')
     # Attach the "AmazonS3ReadOnlyAccess" policy to the IAM role
     # specified by CLUSTER_IAM_ROLE_NAME
@@ -70,7 +73,17 @@ def attach_s3_read_only_access():
                            )['ResponseMetadata']['HTTPStatusCode']
 
 
-def create_cluster(role_arn: str):
+def create_cluster(role_arn: str) -> None:
+    """Create Redshift cluster.
+
+    Print an exception if cluster creation
+    fails (e.g. if cluster already exists).
+
+    Parameters
+    ----------
+    role_arn : str
+        IAM role ARN
+    """
     redshift = boto3.client('redshift',
                             region_name=REGION,
                             aws_access_key_id=KEY,
@@ -91,6 +104,10 @@ def create_cluster(role_arn: str):
 
 
 def open_tcp_port():
+    """Open TCP port for incoming traffic.
+
+    Print an exception if TCP port opening fails (e.g. if called again).
+    """
     # Open TCP port for incoming traffic
     try:
         redshift = boto3.client('redshift',
@@ -119,7 +136,16 @@ def open_tcp_port():
         print(e)
 
 
-def cluster_endpoint():
+def cluster_endpoint() -> str:
+    """Get cluster endpoint.
+
+    Example: returns dwhcluster.cyl4ucf0jibw.us-east-1.redshift.amazonaws.com.
+
+    Returns
+    -------
+    str
+        Cluster endpoint
+    """
     redshift = boto3.client('redshift',
                             region_name=REGION,
                             aws_access_key_id=KEY,
@@ -132,8 +158,8 @@ def cluster_endpoint():
 
 
 if __name__ == '__main__':
-    # role_arn = create_role()
-    # print('IAM role ARN: {}'.format(role_arn))
-    # attach_s3_read_only_access()
-    # create_cluster(role_arn)
+    role_arn = create_role()
+    print('IAM role ARN: {}'.format(role_arn))
+    attach_s3_read_only_access()
+    create_cluster(role_arn)
     open_tcp_port()
